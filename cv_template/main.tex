@@ -1,0 +1,24 @@
+\documentclass{resume} % Use the custom resume.cls style
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{hyperref} % Allows you to make clickable links
+\usepackage[left=0.75in,top=0.35in,right=0.75in,bottom=0.35in]{geometry} % Document margins
+\usepackage{multicol} % Add this line to import the multicol package
+
+% Personal Information
+\name{[Your Name]}
+\address{%
+    {\href{mailto:[Your Email]}{[Your Email]}} \\
+    {\href{https://www.linkedin.com/in/[Your LinkedIn]}{linkedin.com/in/[Your LinkedIn]}} \\
+    {\href{https://[Your Website]}{[Your Website]}}%
+}
+
+\begin{document}
+\vspace{0.12cm}
+
+\input{sections/work_experience} % Replace with your work experience section
+\input{sections/education} % Replace with your education section
+% Projects go here
+\input{sections/technical_skills} % Replace with your technical skills section
+
+\end{document}

@@ -1,0 +1,21 @@
+We are seeking a skilled Full Stack Developer to join our dynamic team. The ideal candidate will have:
+
+- 3+ years of experience in full stack development
+- Strong proficiency in JavaScript, Python, and modern web frameworks (e.g., React, Node.js, Django)
+- Experience with RESTful API design and implementation
+- Familiarity with database systems (SQL and NoSQL)
+- Knowledge of cloud platforms (e.g., AWS, Azure, or GCP)
+- Experience with version control systems (e.g., Git)
+- Understanding of Agile methodologies
+- Excellent problem-solving and communication skills
+
+Responsibilities:
+- Develop and maintain robust, scalable web applications
+- Collaborate with cross-functional teams to design and implement new features
+- Write clean, efficient, and well-documented code for both front-end and back-end
+- Optimize applications for maximum speed and scalability
+- Participate in code reviews and contribute to best practices
+- Troubleshoot and resolve complex software issues
+- Stay up-to-date with emerging trends and technologies in web development
+
+If you are passionate about creating high-quality software solutions and thrive in a collaborative environment, we'd love to hear from you!

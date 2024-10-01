@@ -1,0 +1,44 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+.env
+*.fls
+*.fdb_latexmk
+# Virtual environment
+venv/
+env/
+*.venv
+new_cv/
+CVs/
+info.yml
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# PDF output (uncomment if you don't want to track the generated PDF)
+# *.pdf
+
+# VSCode settings
+.vscode/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# IDE specific files
+.idea/
+*.iml
+
+# Jupyter Notebook
+.ipynb_checkpoints
