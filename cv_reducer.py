@@ -16,19 +16,20 @@ class CVReducer:
             raise ValueError("OpenAI API key is required")
         openai.api_key = self.openai_api_key
 
-    def reduce_content(self, current_pages):
-        for section in self.sections_to_reduce:
-            if current_pages <= self.max_pages:
+    def reduce_content(self):
+        current_pages = self.get_pdf_pages()
+        while current_pages > self.max_pages:
+            reduced = False
+            for section in self.sections_to_reduce:
+                if self.reduce_section(section):
+                    reduced = True
+                    self.compile_pdf()
+                    current_pages = self.get_pdf_pages()
+                    if current_pages <= self.max_pages:
+                        break
+            if not reduced:
+                logging.warning(f"Unable to reduce CV further. Final page count: {current_pages}")
                 break
-            
-            logging.info(f"Reducing content in {section} section")
-            self.reduce_section(section)
-            self.compile_pdf()
-
-            current_pages = self.get_pdf_pages()
-
-        if current_pages > self.max_pages:
-            logging.warning(f"Unable to reduce CV to {self.max_pages} pages. Final page count: {current_pages}")
 
     def reduce_section(self, section):
         with open(f'{section}.tex', 'r') as file:
@@ -38,29 +39,27 @@ class CVReducer:
         
         if section == 'technical_skills':
             lines = self.reduce_technical_skills(lines)
-        elif section in ['projects', 'work_experience', 'education']:
+        else:
             lines = self.reduce_section_with_ai(section, lines)
         
         with open(f'{section}.tex', 'w') as file:
             file.write('\n'.join(lines))
+        
+        return True
 
     def reduce_technical_skills(self, lines):
-        # Remove the last skill (existing logic)
-        skill_index = len(lines) - 1 - next(i for i, line in enumerate(reversed(lines)) if r'\item' in line)
-        del lines[skill_index]
+        skill_indices = [i for i, line in enumerate(lines) if r'\item' in line]
+        if skill_indices:
+            del lines[skill_indices[-1]]
         return lines
 
     def reduce_section_with_ai(self, section, lines):
-        # Extract items (bullet points or entire sections)
         items = self.extract_items(lines)
+        if not items:
+            return lines
         
-        # Use OpenAI to rank items by importance
         ranked_items = self.rank_items_with_ai(section, items)
-        
-        # Remove the least important item
         del ranked_items[-1]
-        
-        # Reconstruct the section with remaining items
         return self.reconstruct_section(lines, ranked_items)
 
     def extract_items(self, lines):
@@ -114,7 +113,6 @@ class CVReducer:
 
     def compile_pdf(self):
         current_dir = os.getcwd()
-        # os.chdir(self.output_dir)
         try:
             subprocess.run(['pdflatex', '-interaction=nonstopmode', '-output-directory=.', 'main.tex'], capture_output=True, text=True)
         finally:
@@ -127,19 +125,15 @@ class CVReducer:
             return len(pdf_reader.pages)
 
 def main():
-    # Set up logging
     logging.basicConfig(level=logging.INFO)
 
-    # Load OpenAI API key from info.yml
     with open('info.yml', 'r') as file:
         info = yaml.safe_load(file)
         openai_api_key = info.get('openai_api_key')
 
-    # Create a temporary directory for the demonstration
     temp_dir = 'cv_template'
 
     try:
-        # Copy the cv_template contents to the temporary directory
         for item in os.listdir('cv_template'):
             s = os.path.join('cv_template', item)
             d = os.path.join(temp_dir, item)
@@ -148,32 +142,21 @@ def main():
             else:
                 shutil.copy2(s, d)
 
-        # Change to the temporary directory
         os.chdir(temp_dir)
 
-        # Create an instance of CVReducer with OpenAI API key
         reducer = CVReducer('.', max_pages=1, openai_api_key=openai_api_key)
-
-        # Compile the initial PDF
         reducer.compile_pdf()
 
-        # Get the initial page count
         initial_pages = reducer.get_pdf_pages()
         logging.info(f"Initial CV has {initial_pages} pages")
 
-        # Reduce content if necessary
-        if initial_pages > reducer.max_pages:
-            reducer.reduce_content(initial_pages)
+        reducer.reduce_content()
 
-        # Get the final page count
         final_pages = reducer.get_pdf_pages()
         logging.info(f"Final CV has {final_pages} pages")
 
     finally:
-        # Change back to the original directory
         os.chdir('..')
-
-        # Clean up the temporary directory
         shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":
