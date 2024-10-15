@@ -1,0 +1,36 @@
+{
+  "essential_requirements": [
+    "3 - 5 years of software development experience",
+    "Minimum of 2 internships with direct experience in building and evaluating ML models",
+    "MS or PhD in a relevant field",
+    "Proficient in crafting machine learning models, including neural networks and traditional models",
+    "Fluent in machine learning frameworks such as SKLearn, XGBoost, PyTorch, or TensorFlow",
+    "Proficient in Python",
+    "Strong Computer Science fundamentals and object-oriented design skills",
+    "History of building large-scale data processing systems",
+    "Strong team collaboration and communication skills"
+  ],
+  "preferred_skills": [
+    "Experience with Large Language Models",
+    "Background working in a fast-paced development environment",
+    "Skills in designing sophisticated anomaly detection algorithms like Isolation Forests and LSTM-based models",
+    "Experience with stream processing technologies like Flink and Kafka"
+  ],
+  "key_responsibilities": [
+    "Collaborate with engineers to design, implement, and maintain AI/ML pipelines for real-time anomaly detection",
+    "Train and tune models, performing model evaluations using AI/ML techniques",
+    "Design and implement anomaly detection algorithms tailored to unique data streams",
+    "Create robust evaluation frameworks to assess algorithm performance",
+    "Implement and optimize stream processing solutions"
+  ],
+  "company_mission": [
+    "Empower organizations to deliver flawless digital experiences across every network",
+    "Enable IT teams to proactively detect, diagnose, and remediate issues before they impact end-user experiences",
+    "Integrate across the Cisco technology portfolio to deliver AI-powered assurance insights"
+  ],
+  "additional_info": [
+    "Focus on handling massive datasets with applied machine learning",
+    "Opportunity to work with unparalleled data diversity and scale in real-time anomaly detection"
+  ],
+  "job_title": "Machine Learning Engineer"
+}

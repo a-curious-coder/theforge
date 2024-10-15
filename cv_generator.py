@@ -1,7 +1,7 @@
 import os
+import re
 from loguru import logger
-from utils import load_yaml, load_job_description, compile_latex, load_template, get_pdf_pages, move_cv_to_output
-from job_description_processor import process_job_description
+from utils import compile_latex, load_template, move_cv_to_output
 from prompts import (
     get_cv_name_prompt,
     get_projects_prompt,
@@ -9,13 +9,11 @@ from prompts import (
     get_work_experience_prompt,
     get_technical_skills_prompt
 )
-from cv_reducer import CVReducer
-from dotenv import load_dotenv
 from swarm import Swarm, Agent
 from swarm.core import Result
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-
-load_dotenv()
+from config import config
+from cv_optimizer import CVOptimizer
 
 client = Swarm()
 
@@ -27,7 +25,7 @@ class CVGenerator:
         self.max_pages = max_pages
         
         self.section_agent = Agent(
-            model=os.getenv("OPENAI_MODEL"),
+            model=config.OPENAI_MODEL,
             name="Section Generator",
             instructions="""You are an expert in generating CV sections based on personal information and job requirements.
             Your task is to create highly relevant and impactful content for each section of the CV.
@@ -41,18 +39,8 @@ class CVGenerator:
             ]
         )
         
-        self.optimizer_agent = Agent(
-            model=os.getenv("OPENAI_MODEL"),
-            name="CV Optimizer",
-            instructions="""You are an expert in optimizing CV content to match job requirements and fit within page limits.
-            Your task is to refine and condense the CV content while maintaining its impact and relevance.
-            Focus on highlighting the most important information and removing any redundant or less relevant details.
-            Ensure that bullet points are between 75 and 95 characters long.""",
-            functions=[self.optimize_content]
-        )
-        
         self.reviewer_agent = Agent(
-            model=os.getenv("OPENAI_MODEL"),
+            model=config.OPENAI_MODEL,
             name="CV Reviewer",
             instructions="""You are an expert in reviewing and providing feedback on CVs.
             Your task is to critically evaluate the CV for its overall quality, relevance to the job description, and adherence to best practices.
@@ -63,7 +51,7 @@ class CVGenerator:
         )
 
         self.formatter_agent = Agent(
-            model=os.getenv("OPENAI_MODEL"),
+            model=config.OPENAI_MODEL,
             name="LaTeX Formatter",
             instructions="""You are an expert in formatting CVs using LaTeX.
             Your task is to ensure that the CV is properly formatted, visually appealing, and adheres to LaTeX best practices.
@@ -71,7 +59,7 @@ class CVGenerator:
             functions=[self.format_latex]
         )
 
-        self.cv_reducer = CVReducer(output_dir, processed_job_info, max_pages)
+        self.cv_optimizer = CVOptimizer(output_dir, processed_job_info, info, max_pages)
 
     @retry(stop=stop_after_attempt(3), wait=wait_random_exponential(min=1, max=60))
     def generate_cv(self):
@@ -84,16 +72,7 @@ class CVGenerator:
             }
             
             logger.info("Starting CV generation process")
-            
-            # Generate CV name
-            cv_name_prompt = get_cv_name_prompt(self.processed_job_info)
-            cv_name_response = client.run(
-                agent=self.section_agent,
-                messages=[{"role": "user", "content": cv_name_prompt}],
-                context_variables=context_variables
-            )
-            cv_name = cv_name_response.context_variables.get('cv_name', 'default_cv_name')
-            
+
             # Generate sections
             sections = ['education', 'work_experience', 'projects', 'technical_skills']
             for section in sections:
@@ -104,15 +83,11 @@ class CVGenerator:
                     messages=[{"role": "user", "content": prompt.context_variables[f'{section}_content']}],
                     context_variables=context_variables
                 )
-                self._save_section_content(section, response.context_variables.get(f'{section}_content', ''))
-            
+                self._save_section_content(section, response.messages[-1]["content"])
+
             # Optimize content
             logger.info("Optimizing CV content")
-            response = client.run(
-                agent=self.optimizer_agent,
-                messages=[{"role": "user", "content": "Optimize and reduce CV content if needed."}],
-                context_variables=context_variables
-            )
+            self.cv_optimizer.optimize_content()
             
             # Format LaTeX
             logger.info("Formatting CV in LaTeX")
@@ -122,15 +97,7 @@ class CVGenerator:
                 context_variables=response.context_variables
             )
             
-            self._save_main_tex(response.context_variables.get('formatted_content', ''))
-            
-            # Compile LaTeX
-            num_pages = compile_latex(self.output_dir)
-            if num_pages is not None:
-                if num_pages > self.max_pages:
-                    logger.warning(f"Generated CV has {num_pages} pages, which exceeds the maximum of {self.max_pages}.")
-                    self.cv_reducer.reduce_content()
-                    num_pages = compile_latex(self.output_dir)
+            self._save_main_tex(response.messages[-1]["content"])
             
             # Review CV
             logger.info("Reviewing final CV")
@@ -140,10 +107,10 @@ class CVGenerator:
                 context_variables=response.context_variables
             )
             
-            self._save_review_feedback(response.context_variables.get('review_feedback', ''))
+            self._save_review_feedback(response.messages[-1]["content"])
             
             # Move CV to output directory
-            move_cv_to_output(self.output_dir, cv_name)
+            move_cv_to_output(self.output_dir, "FINALLY")
             
             logger.success("CV generation process completed successfully")
             return response
@@ -171,9 +138,6 @@ class CVGenerator:
         prompt = get_cv_name_prompt(self.processed_job_info)
         return Result(value="CV name generated", context_variables={"cv_name": prompt})
 
-    def optimize_content(self, context_variables):
-        return self.cv_reducer.optimize_content(context_variables)
-
     def review_cv(self, context_variables):
         with open(os.path.join(self.output_dir, 'main.tex'), 'r') as f:
             cv_content = f.read()
@@ -190,10 +154,18 @@ class CVGenerator:
         return Result(value="CV formatted in LaTeX", context_variables={"formatted_content": formatted_content})
 
     def _save_section_content(self, section, content):
-        with open(os.path.join(self.output_dir, f'{section}.tex'), 'w') as f:
-            f.write(content)
-        logger.info(f"Saved {section} section content")
+        # Extract LaTeX content from the string
+        latex_content = re.search(r'```latex\s*(.*?)\s*```', content, re.DOTALL)
+        if latex_content:
+            extracted_content = latex_content.group(1)
+        else:
+            logger.warning(f"No LaTeX content found in {section} section. Saving raw content.")
+            extracted_content = content
 
+        with open(os.path.join(self.output_dir, f'{section}.tex'), 'w') as f:
+            f.write(extracted_content)
+        logger.info(f"Saved {section} section content")
+        
     def _save_main_tex(self, content):
         with open(os.path.join(self.output_dir, 'main.tex'), 'w') as f:
             f.write(content)
@@ -203,38 +175,3 @@ class CVGenerator:
         with open(os.path.join(self.output_dir, 'review_feedback.txt'), 'w') as f:
             f.write(feedback)
         logger.info("Saved review feedback")
-
-def generate_cv(info_path, job_description_path, output_dir, max_pages):
-    logger.info("Starting CV generation process...")
-
-    info = load_yaml(info_path)
-    if not info:
-        logger.error(f"Failed to load info from {info_path}")
-        return
-
-    job_description = load_job_description(job_description_path)
-    if not job_description:
-        logger.error(f"Failed to load job description from {job_description_path}")
-        return
-
-    processed_job_info = process_job_description(job_description)
-
-    os.makedirs(output_dir, exist_ok=True)
-
-    cv_generator = CVGenerator(info, processed_job_info, output_dir, max_pages)
-    cv_generator.generate_cv()
-
-    logger.info("CV generation process completed.")
-
-if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Generate a CV")
-    parser.add_argument("--info", default="info.yml", help="Path to the YAML file containing personal information")
-    parser.add_argument("--job", default="job_description.txt", help="Path to the job description file")
-    parser.add_argument("--output", default="output", help="Output directory for generated files")
-    parser.add_argument("--pages", type=int, default=1, choices=[1, 2], help="Maximum number of pages for the CV")
-    
-    args = parser.parse_args()
-    
-    generate_cv(args.info, args.job, args.output, args.pages)

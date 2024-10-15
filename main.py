@@ -1,62 +1,48 @@
-import os
-import shutil
-from dotenv import load_dotenv
-import openai
 from loguru import logger
 from cv_generator import CVGenerator
-from utils import load_yaml, load_job_description, get_pdf_pages
-from job_description_processor import process_job_description
+from utils import load_yaml, load_job_description
+from job_description_processor import JobDescriptionProcessor
+from config import config
+import os
 
-# Configure logger
-logger.add("app.log", rotation="500 MB", level="DEBUG")
+def setup_logging():
+    os.makedirs(config.LOG_DIR, exist_ok=True)
+    log_file = os.path.join(config.LOG_DIR, config.LOG_FILE)
+    logger.add(log_file, rotation="500 MB", level="DEBUG")
 
-# Load environment variables
-load_dotenv()
-logger.info("Environment variables loaded.")
-
-# Set up OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-logger.success("OpenAI API key set successfully.")
-
-def generate_single_section(cv_generator, section_name):
-    cv_generator.generate_single_section(section_name)
-    pdf_pages = get_pdf_pages(cv_generator.output_dir)
-    if pdf_pages is not None:
-        logger.success(f"Section '{section_name}' generated successfully.")
-        # Move the generated PDF to a test directory
-        test_cv_dir = 'TestCVs'
-        os.makedirs(test_cv_dir, exist_ok=True)
-        pdf_file = next((f for f in os.listdir(cv_generator.output_dir) if f.endswith('.pdf')), None)
-        if pdf_file:
-            new_pdf_name = f"test_{section_name}.pdf"
-            shutil.move(os.path.join(cv_generator.output_dir, pdf_file), os.path.join(test_cv_dir, new_pdf_name))
-            logger.info(f"Section PDF saved as {new_pdf_name} in the TestCVs directory.")
-        else:
-            logger.error("PDF file not found, unable to move.")
-    else:
-        logger.critical(f"Failed to generate section '{section_name}'.")
+def setup_directories():
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    os.makedirs(config.CV_OUTPUT_DIR, exist_ok=True)
 
 def main():
     try:
-        info = load_yaml('info.yml')
-        job_description = load_job_description('job_description.txt')
-        processed_job_info = process_job_description(job_description)
+        # Setup
+        setup_logging()
+        setup_directories()
 
-        desired_pages = 1
+        # Load and process data
+        info = load_yaml(config.INFO_FILE)
+        job_description = load_job_description(config.JOB_DESCRIPTION_FILE)
         
-        output_dir = 'output'
-        cv_output_dir = 'CVs'
-        os.makedirs(output_dir, exist_ok=True)
-        os.makedirs(cv_output_dir, exist_ok=True)
+        job_processor = JobDescriptionProcessor()
+        processed_job_info = job_processor.process_job_description(job_description)
         
-        cv_generator = CVGenerator(info, processed_job_info, output_dir, max_pages=desired_pages)
-        cv_generator.generate_cv()
+        cv_generator = CVGenerator(info, processed_job_info, config.OUTPUT_DIR, max_pages=config.DESIRED_PAGES)
         
-        pdf_file = next((f for f in os.listdir(output_dir) if f.endswith('.pdf')), None)
+        # Generate CV
+        result = cv_generator.generate_cv()
+        logger.info("CV generation process completed.")
+        # If you need the review feedback, you can access it from the result
+        review_feedback = result.context_variables.get('review_feedback', '')
+        if review_feedback:
+            logger.info("CV reviewed. Feedback available in the result.")
+        
+        # Move generated PDF
+        pdf_file = next((f for f in os.listdir(config.OUTPUT_DIR) if f.endswith('.pdf')), None)
         if pdf_file:
             cv_name = cv_generator.generate_cv_name()
             new_pdf_name = f"{cv_name}.pdf"
-            shutil.move(os.path.join(output_dir, pdf_file), os.path.join(cv_output_dir, new_pdf_name))
+            os.rename(os.path.join(config.OUTPUT_DIR, pdf_file), os.path.join(config.CV_OUTPUT_DIR, new_pdf_name))
             logger.success(f"CV generated and saved as {new_pdf_name} in the CVs directory.")
         else:
             logger.error("PDF file not found, unable to move.")
