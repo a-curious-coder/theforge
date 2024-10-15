@@ -24,33 +24,20 @@ def index():
 @app.route('/generate_cv', methods=['POST'])
 def generate_cv():
     job_description = request.form['job_description']
-    info = load_yaml('info.yml')  # Load your info.yml file
+    info = load_yaml('info.yml')
     processed_job_info = process_job_description(job_description)
     
-    output_dir = 'output'
-    os.makedirs(output_dir, exist_ok=True)
-    
-    cv_generator = CVGenerator(info, processed_job_info, output_dir, max_pages=1)
+    cv_generator = CVGenerator(info, processed_job_info, 'output', max_pages=1)
     
     def generate():
-        yield "data: Analyzing job description\n\n"
-        time.sleep(1)  # Simulate processing time
-        
-        for section in ['education', 'work_experience', 'projects', 'technical_skills']:
-            yield f"data: section:{section}\n\n"
-            cv_generator.generate_single_section(section)
-            cv_generator.compile_cv()  # Compile after each section
-            time.sleep(1)  # Simulate processing time
-        
-        yield "data: Optimizing CV content\n\n"
-        cv_generator.optimize_content()
-        time.sleep(1)  # Simulate processing time
-        
-        yield "data: Compiling final LaTeX document\n\n"
-        cv_generator.compile_cv()
-        time.sleep(1)  # Simulate processing time
-        
-        yield "data: complete\n\n"
+        stream = cv_generator.generate_cv(stream=True)
+        for chunk in stream:
+            if 'content' in chunk:
+                yield f"data: {chunk['content']}\n\n"
+            elif 'delim' in chunk:
+                yield f"data: {chunk['delim']} {chunk.get('agent', '')}\n\n"
+            elif 'response' in chunk:
+                yield "data: complete\n\n"
     
     return Response(generate(), mimetype='text/event-stream')
 

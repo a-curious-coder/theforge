@@ -1,7 +1,6 @@
 import yaml
 import os
 import re
-import openai
 import subprocess
 import pypdf
 import shutil
@@ -9,18 +8,16 @@ import argparse
 from loguru import logger
 from dotenv import load_dotenv
 from typing import Dict, List, Optional
+from openai import OpenAI
 
-# Load environment variables
 load_dotenv()
 
-# Ensure OpenAI API key is set
 if not os.getenv("OPENAI_API_KEY"):
     logger.critical("OPENAI_API_KEY environment variable is not set")
     raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Silence OpenAI loggers
 logger.disable("openai")
 logger.disable("openai.http_client")
 
@@ -40,32 +37,6 @@ def load_template(file_path: str) -> str:
             return file.read()
     except FileNotFoundError:
         logger.error(f"Template file not found: {file_path}")
-        return ""
-
-def generate_section_content(section_name: str, prompt: str) -> str:
-    # logger.info(f"Generating section for {section_name}")
-    try:
-        response = openai.ChatCompletion.create(
-            model=os.getenv("OPENAI_MODEL"),
-            messages=[
-                {"role": "system", "content": "You are a LaTeX expert tasked with generating CV sections that exactly match given templates. Ensure all LaTeX syntax is correct and complete."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-
-        generated_content = response.choices[0].message['content'].strip('`').strip('latex')
-        
-        if not validate_latex_syntax(generated_content):
-            logger.warning(f"Invalid LaTeX syntax detected in {section_name} section. Attempting to fix...")
-            generated_content = fix_latex_syntax(generated_content)
-        
-        if section_name in ["Work Experience", "Projects"]:
-            generated_content = adjust_bullet_point_lengths(generated_content)
-        
-        logger.success(f"Section for {section_name} generated successfully")
-        return generated_content.replace('#', r'\#').replace(r'\\#', r'\#')
-    except Exception as e:
-        logger.error(f"Error generating section content: {str(e)}")
         return ""
 
 def validate_latex_syntax(content: str) -> bool:
@@ -146,14 +117,14 @@ def adjust_bullet_point(bullet_point: str) -> str:
     for attempt in range(max_attempts):
         try:
             logger.debug(f"Adjusting bullet point, attempt {attempt + 1}")
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model=os.getenv("OPENAI_MODEL"),
                 messages=[
                     {"role": "system", "content": "You are an expert in CV writing. Adjust the given bullet point to be between 75 and 95 characters while maintaining its key information and ensuring high quality."},
                     {"role": "user", "content": f"Adjust this bullet point to be between 75 and 95 characters: {bullet_point}"}
                 ]
             )
-            adjusted_bullet = response.choices[0].message['content'].strip().lstrip('-').strip()
+            adjusted_bullet = response.choices[0].message.content.strip().lstrip('-').strip()
             if 75 <= len(adjusted_bullet) <= 95:
                 logger.success("Bullet point adjusted successfully")
                 return adjusted_bullet
@@ -162,14 +133,14 @@ def adjust_bullet_point(bullet_point: str) -> str:
     
     try:
         logger.warning("Failed to adjust bullet point, generating new one")
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=os.getenv("OPENAI_MODEL"),
             messages=[
                 {"role": "system", "content": "You are an expert in CV writing. Generate a new, high-quality bullet point based on the theme of the given one, ensuring it's between 75 and 95 characters."},
                 {"role": "user", "content": f"Generate a new bullet point based on this theme, but make it between 75 and 95 characters: {bullet_point}"}
             ]
         )
-        new_bullet = response.choices[0].message['content'].strip().lstrip('-').strip()
+        new_bullet = response.choices[0].message.content.strip().lstrip('-').strip()
         if 75 <= len(new_bullet) <= 95:
             logger.success("New bullet point generated successfully")
             return new_bullet

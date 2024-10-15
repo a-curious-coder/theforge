@@ -1,7 +1,5 @@
-from utils import generate_section_content
-
-def generate_cv_name(job_description):
-    prompt = f"""
+def get_cv_name_prompt(job_description):
+    return f"""
     Based on the following job description, generate a concise and descriptive filename for a CV.
     The filename should follow this format: [MainTechnology/Role]_[OptionalSpecialization]_CV
     
@@ -17,4 +15,3 @@ def generate_cv_name(job_description):
     Job Description:
     {job_description}
     """
-    return generate_section_content("CV Name", prompt).strip()

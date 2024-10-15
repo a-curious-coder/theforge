@@ -1,8 +1,7 @@
 import yaml
-from utils import generate_section_content
 
-def generate_technical_skills_section(info, job_description, template):
-    prompt = f"""
+def get_technical_skills_prompt(info, job_description, template):
+    return f"""
     Generate the technical skills section for a CV based on the following information and job description:
 
     Information:
@@ -27,4 +26,5 @@ def generate_technical_skills_section(info, job_description, template):
     10. Aim for a concise list of specific technical skills that demonstrates a strong match to the job requirements.
     11. Each listed skill must be a specific, individual technical skill (e.g., 'Python', 'Docker', 'TensorFlow'), not a broad category or description.
     """
-    return generate_section_content("Technical Skills", prompt)
+
+# No changes needed for this file as it already only contains the get_technical_skills_prompt function

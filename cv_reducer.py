@@ -3,9 +3,11 @@ import shutil
 import openai
 import yaml
 import traceback
-from utils import get_pdf_pages, compile_latex  # Add get_pdf_pages import
+from utils import get_pdf_pages, compile_latex, adjust_bullet_point_lengths  # Add get_pdf_pages import
 from dotenv import load_dotenv
 from loguru import logger
+from openai import OpenAI
+from swarm.core import Result
 
 load_dotenv()
 
@@ -14,7 +16,7 @@ class CVReducer:
         self.output_dir = output_dir
         self.max_pages = max_pages
         self.sections_to_reduce = ['technical_skills', 'projects', 'work_experience']
-        openai.api_key = os.getenv('OPENAI_API_KEY')
+        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.job_description = job_description
 
     def reduce_content(self):
@@ -65,14 +67,14 @@ class CVReducer:
         """
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=os.getenv("OPENAI_MODEL"),
                 messages=[
                     {"role": "system", "content": "You are an expert in CV evaluation and job matching."},
                     {"role": "user", "content": prompt}
                 ]
             )
-            score = int(response.choices[0].message['content'].strip())
+            score = int(response.choices[0].message.content.strip())
             logger.info(f"Relevance score for {section}: {score}")
             return score
         except Exception as e:
@@ -95,14 +97,14 @@ class CVReducer:
         """
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=os.getenv("OPENAI_MODEL"),
                 messages=[
                     {"role": "system", "content": "You are an expert in CV optimization and job matching."},
                     {"role": "user", "content": prompt}
                 ]
             )
-            reduced_content = response.choices[0].message['content'].strip()
+            reduced_content = response.choices[0].message.content.strip()
             
             with open(os.path.join(self.output_dir, f"{section}.tex"), 'w') as file:
                 file.write(reduced_content)
@@ -112,6 +114,13 @@ class CVReducer:
         except Exception as e:
             logger.error(f"Error reducing content for {section}: {str(e)}")
             return False
+
+    def optimize_content(self, context_variables):
+        optimized_content = {}
+        for section in ['education', 'work_experience', 'projects', 'technical_skills']:
+            content = self.get_section_content(section)
+            optimized_content[section] = adjust_bullet_point_lengths(content)
+        return Result(value="Content optimized", context_variables={"optimized_content": optimized_content})
 
 def main():
     logger.add("cv_reducer.log", rotation="500 MB")

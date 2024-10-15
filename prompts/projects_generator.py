@@ -1,8 +1,7 @@
 import yaml
-from utils import generate_section_content
 
-def generate_projects_section(info, job_description, template):
-    prompt = f"""
+def get_projects_prompt(info, job_description, template):
+    return f"""
     Generate only the LaTeX output for the projects section of a CV based on the following information and job description:
 
     Information:
@@ -26,4 +25,5 @@ def generate_projects_section(info, job_description, template):
     9. Avoids repetition of information across bullet points.
     10. Emphasizes the project's impact and your role in its development.
     """
-    return generate_section_content("Projects", prompt)
+
+# No changes needed for this file as it already only contains the get_projects_prompt function

@@ -38,6 +38,36 @@ graph TD
     I -->|1 page| L[Finish CV Generation]
 ```
 
+## OpenAI Swarm Implementation
+
+The Forge utilizes OpenAI's Swarm framework to create a multi-agent system for intelligent CV generation. This approach allows for a more modular, efficient, and specialized process in creating tailored CVs.
+
+### Purpose
+
+The Swarm implementation in The Forge serves several key purposes:
+
+1. **Modular CV Generation**: By breaking down the CV creation process into specialized tasks handled by different agents, we can achieve a more focused and efficient workflow.
+
+2. **Dynamic Adaptation**: The multi-agent system can adapt to different requirements and job descriptions more effectively, ensuring that each CV is uniquely tailored to the specific position.
+
+3. **Improved Quality Control**: With dedicated agents for optimization and review, we can ensure that the final CV meets high standards of quality and relevance.
+
+4. **Scalability**: The Swarm architecture allows for easy addition of new agents or modification of existing ones, making the system highly scalable and adaptable to future requirements.
+
+### Functionality
+
+The Swarm implementation in The Forge consists of the following key components:
+
+1. **Section Generator Agent**: Responsible for creating the initial content for each CV section based on the user's information and the job description.
+
+2. **Optimizer Agent**: Refines and condenses the CV content to ensure it's impactful and fits within the specified page limit.
+
+3. **Reviewer Agent**: Provides a final review of the CV, offering suggestions for improvements and ensuring overall quality.
+
+4. **Formatter Agent**: Ensures proper LaTeX formatting and visual appeal of the CV.
+
+These agents work together in a coordinated manner, passing control and context between each other as needed. This allows for a comprehensive and intelligent CV generation process that leverages the strengths of each specialized agent.
+
 ## Setup
 
 1. Clone the repository:

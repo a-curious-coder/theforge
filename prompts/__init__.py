@@ -1,0 +1,5 @@
+from .education_generator import get_education_prompt
+from .work_experience_generator import get_work_experience_prompt
+from .projects_generator import get_projects_prompt
+from .technical_skills_generator import get_technical_skills_prompt
+from .name_generator import get_cv_name_prompt
