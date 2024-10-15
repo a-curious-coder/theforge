@@ -22,19 +22,20 @@ The Forge is an intelligent CV generator that creates tailored, professional res
 - Deployed on server
 
 ## Workflow
-
 ```mermaid
 graph TD
-    A[Start] --> B[Load Personal Info]
-    B --> C[Input Job Description]
-    C --> D[Generate CV Content]
-    D --> E[Create LaTeX Document]
-    E --> F[Compile PDF]
-    F --> G{CV Fits Page Limit?}
-    G -->|Yes| H[Save Final CV]
-    G -->|No| I[Reduce Content]
-    I -->|Yes| E
-    H --> J[End]
+    A[Read Job Description] --> B[Preprocess via AI]
+    B --> C[Generate Sections]
+    C --> D[Education]
+    C --> E[Projects]
+    C --> F[Work Experience]
+    C --> G[Technical Skills]
+    D & E & F & G --> H[Generate CV]
+    H --> I{Count Pages}
+    I -->|more than 1 page| J[Read Projects, Work Experience, Technical Skills]
+    J --> K[Remove Least Valuable/Aligned Info]
+    K --> H
+    I -->|1 page| L[Finish CV Generation]
 ```
 
 ## Setup

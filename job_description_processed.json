@@ -1,0 +1,38 @@
+{
+  "essential_requirements": [
+    "Exceptional communication skills",
+    "Experience with RESTful API design and documentation",
+    "Engineering management experience",
+    "Experience with GraphQL implementation",
+    "Experience with caching strategies using Redis or Memcached",
+    "Experience with Python, Flask, MySQL, AWS, GCP",
+    "Proven track record of delivering well-designed, well-tested, and performant software solutions within an agile environment",
+    "Eager and interested in building AI-powered platforms"
+  ],
+  "preferred_skills": [
+    "Experience managing teams",
+    "Strong understanding of SDLC process",
+    "Knowledge of modern UI patterns and libraries like JavaScript, React, and Angular",
+    "Experience with real-time data analysis and visualization"
+  ],
+  "key_responsibilities": [
+    "Lead/manage team members and help engineers increase technical capabilities",
+    "Write production-ready code that is easily testable and understandable",
+    "Provide honest feedback to create growth opportunities",
+    "Ensure reliability, performance, motivation, and alignment with objectives",
+    "Nurture an environment of continuous growth through mentorship and learning opportunities",
+    "Take ownership of practices and processes within the team",
+    "Foster a culture of goal setting and accountability"
+  ],
+  "company_mission": [
+    "Shape the future of the AdTech industry",
+    "Drive success for Choreograph and its clients",
+    "Build a diverse, inclusive, and equal opportunity team"
+  ],
+  "additional_info": [
+    "Choreograph is part of WPP\u2019s media investment group, GroupM",
+    "GroupM manages over $60 billion in annual media investment",
+    "Explore more at www.choreograph.com"
+  ],
+  "job_title": "Engineering Manager"
+}

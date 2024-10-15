@@ -1,54 +1,69 @@
 import os
-import logging
 import shutil
 from dotenv import load_dotenv
 import openai
+from loguru import logger
 from cv_generator import CVGenerator
-from utils import load_yaml, build_latex_project, load_job_description
-from prompts.projects_generator import generate_projects_section
-from prompts.education_generator import generate_education_section
-from prompts.technical_skills_generator import generate_technical_skills_section
-from prompts.work_experience_generator import generate_work_experience_section
+from utils import load_yaml, load_job_description, get_pdf_pages
+from job_description_processor import process_job_description
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logger
+logger.add("app.log", rotation="500 MB", level="DEBUG")
 
 # Load environment variables
 load_dotenv()
-logging.info("Environment variables loaded.")
+logger.info("Environment variables loaded.")
 
 # Set up OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
-logging.info("OpenAI API key set.")
+logger.success("OpenAI API key set successfully.")
+
+def generate_single_section(cv_generator, section_name):
+    cv_generator.generate_single_section(section_name)
+    pdf_pages = get_pdf_pages(cv_generator.output_dir)
+    if pdf_pages is not None:
+        logger.success(f"Section '{section_name}' generated successfully.")
+        # Move the generated PDF to a test directory
+        test_cv_dir = 'TestCVs'
+        os.makedirs(test_cv_dir, exist_ok=True)
+        pdf_file = next((f for f in os.listdir(cv_generator.output_dir) if f.endswith('.pdf')), None)
+        if pdf_file:
+            new_pdf_name = f"test_{section_name}.pdf"
+            shutil.move(os.path.join(cv_generator.output_dir, pdf_file), os.path.join(test_cv_dir, new_pdf_name))
+            logger.info(f"Section PDF saved as {new_pdf_name} in the TestCVs directory.")
+        else:
+            logger.error("PDF file not found, unable to move.")
+    else:
+        logger.critical(f"Failed to generate section '{section_name}'.")
 
 def main():
-    info = load_yaml('info.yml')
-    job_description = load_job_description('job_description.txt')
+    try:
+        info = load_yaml('info.yml')
+        job_description = load_job_description('job_description.txt')
+        processed_job_info = process_job_description(job_description)
 
-    # Create output directories if they don't exist
-    output_dir = 'new_cv'
-    cv_output_dir = 'CVs'
-    output_dirs = [output_dir, cv_output_dir]
-    for dir in output_dirs:
-        os.makedirs(dir, exist_ok=True)
-        logging.info(f"Output directory '{dir}' created.")
-
-    cv_generator = CVGenerator(info, job_description, output_dir)
-    cv_generator.generate_cv()
-    logging.info("Files generated successfully in the new_cv folder!")
-
-    if build_latex_project(output_dir):
-        # Move the generated PDF to the CVs directory
+        desired_pages = 1
+        
+        output_dir = 'output'
+        cv_output_dir = 'CVs'
+        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(cv_output_dir, exist_ok=True)
+        
+        cv_generator = CVGenerator(info, processed_job_info, output_dir, max_pages=desired_pages)
+        cv_generator.generate_cv()
+        
         pdf_file = next((f for f in os.listdir(output_dir) if f.endswith('.pdf')), None)
         if pdf_file:
-            shutil.move(os.path.join(output_dir, pdf_file), os.path.join(cv_output_dir, pdf_file))
-            logging.info(f"PDF moved to '{cv_output_dir}/{pdf_file}'.")
+            cv_name = cv_generator.generate_cv_name()
+            new_pdf_name = f"{cv_name}.pdf"
+            shutil.move(os.path.join(output_dir, pdf_file), os.path.join(cv_output_dir, new_pdf_name))
+            logger.success(f"CV generated and saved as {new_pdf_name} in the CVs directory.")
         else:
-            logging.error("PDF file not found, unable to move.")
-
-        logging.info("Project built successfully.")
-    else:
-        logging.error("Failed to build project.")
+            logger.error("PDF file not found, unable to move.")
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {str(e)}")
 
 if __name__ == "__main__":
+    logger.info("Starting CV generation process...")
     main()
+    logger.info("CV generation process completed.")

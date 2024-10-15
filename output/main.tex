@@ -1,0 +1,25 @@
+\documentclass{resume} % Use the custom resume.cls style
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{multicol} % Added multicols package
+\usepackage{hyperref} % Allows me to make clickable links
+\usepackage[left=0.75in,top=0.35in,right=0.75in,bottom=0.35in]{geometry} % Document margins
+\newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}}
+\newcommand{\itab}[1]{\hspace{0em}\rlap{#1}}
+
+% Personal Information
+\name{Callum McLennan}
+\address{%
+    {\href{mailto:callummclennan21@gmail.com}{callummclennan21@gmail.com}} \\
+    {\href{https://www.linkedin.com/in/callum-mclennan}{callum-mclennan}} \\
+    {\href{https://www.github.com/a-curious-coder}{a-curious-coder}}%
+}
+
+\begin{document}
+\vspace{0.12cm}
+
+\input{education}
+\input{work_experience}
+\input{projects}
+\input{technical_skills}
+\end{document}

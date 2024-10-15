@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Forge - CV Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        #loading-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 min-h-screen font-sans flex flex-col">
+    <header class="bg-gray-800 shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-4xl font-bold text-center text-blue-400">
+                <i class="fas fa-fire mr-2"></i>The Forge
+            </h1>
+            <p class="text-center text-gray-400 mt-2">Intelligent CV Generator</p>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex-1">
+            <h2 class="text-2xl font-semibold mb-4 text-blue-300">Job Description</h2>
+            <textarea id="job-description" class="w-full h-64 p-2 bg-gray-700 text-gray-100 rounded-lg border border-gray-600 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-4" placeholder="Paste job description here..."></textarea>
+            <div class="flex gap-4">
+                <button id="generate-cv" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    Generate CV
+                </button>
+                <button id="cancel-generate" class="hidden flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    Cancel
+                </button>
+            </div>
+            <div id="progress" class="mt-4 hidden">
+                <h3 class="text-xl font-semibold mb-2 text-blue-300">Generation Progress:</h3>
+                <ul id="progress-list" class="list-none text-green-400"></ul>
+            </div>
+        </div>
+        
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex-1 flex flex-col">
+            <h2 class="text-2xl font-semibold mb-4 text-blue-300">Generated CV</h2>
+            <div id="pdf-viewer" class="flex-grow flex flex-col">
+                <iframe id="pdf-iframe" class="w-full flex-grow rounded-lg shadow-lg mb-4" src="/view_pdf"></iframe>
+                <a id="download-pdf" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-center" href="/download_pdf" download>
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 shadow-lg mt-8">
+        <div class="container mx-auto px-4 py-4">
+            <p class="text-center text-gray-400">&copy; 2023 The Forge. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <div id="loading-animation" class="hidden"></div>
+
+    <script>
+        let scene, camera, renderer, blob;
+        let animationId;
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(200, 200);
+            document.getElementById('loading-animation').appendChild(renderer.domElement);
+
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x00ffff,
+                shininess: 100,
+                specular: 0x111111,
+                transparent: true,
+                opacity: 0.8
+            });
+            blob = new THREE.Mesh(geometry, material);
+            scene.add(blob);
+
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(0, 0, 10);
+            scene.add(light);
+
+            camera.position.z = 3;
+        }
+
+        function animateThreeJS() {
+            animationId = requestAnimationFrame(animateThreeJS);
+            const time = Date.now() * 0.001;
+            blob.rotation.x = Math.sin(time) * 0.5;
+            blob.rotation.y = Math.cos(time) * 0.5;
+            blob.scale.x = 1 + Math.sin(time * 2) * 0.2;
+            blob.scale.y = 1 + Math.cos(time * 2) * 0.2;
+            blob.scale.z = 1 + Math.sin(time * 2) * 0.2;
+            renderer.render(scene, camera);
+        }
+
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            document.getElementById('loading-animation').classList.add('hidden');
+        }
+
+        const generateButton = document.getElementById('generate-cv');
+        const cancelButton = document.getElementById('cancel-generate');
+        const jobDescription = document.getElementById('job-description');
+        const progressList = document.getElementById('progress-list');
+        const progress = document.getElementById('progress');
+        const pdfViewer = document.getElementById('pdf-viewer');
+        const pdfIframe = document.getElementById('pdf-iframe');
+        const loadingAnimation = document.getElementById('loading-animation');
+
+        let xhr;
+
+        generateButton.addEventListener('click', function() {
+            if (!jobDescription.value.trim()) {
+                alert('Please enter a job description.');
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.classList.add('opacity-50', 'cursor-not-allowed');
+            cancelButton.classList.remove('hidden');
+            progress.classList.remove('hidden');
+            progressList.innerHTML = '';
+            loadingAnimation.classList.remove('hidden');
+
+            initThreeJS();
+            animateThreeJS();
+
+            xhr = new XMLHttpRequest();
+            xhr.open('POST', '/generate_cv', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send('job_description=' + encodeURIComponent(jobDescription.value));
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 3) {
+                    const newData = xhr.responseText.split('\n\n');
+                    newData.forEach(data => {
+                        if (data.startsWith('data: ')) {
+                            const content = data.substring(6);
+                            if (content === 'complete') {
+                                pdfIframe.src = '/view_pdf?' + new Date().getTime();
+                                progressList.innerHTML += `<li class="text-blue-300 font-semibold">CV generation completed!</li>`;
+                                stopAnimation();
+                                generateButton.disabled = false;
+                                generateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                                cancelButton.classList.add('hidden');
+                            } else if (content.startsWith('section:')) {
+                                const section = content.split(':')[1];
+                                progressList.innerHTML += `<li>Generated ${section} section</li>`;
+                                pdfIframe.src = '/view_pdf?' + new Date().getTime();
+                            } else {
+                                progressList.innerHTML += `<li>${content}</li>`;
+                            }
+                        }
+                    });
+                }
+            };
+
+            xhr.onerror = function(error) {
+                console.error('XHR failed:', error);
+                progressList.innerHTML += `<li class="text-red-500">Error: CV generation failed. Please try again.</li>`;
+                stopAnimation();
+                generateButton.disabled = false;
+                generateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                cancelButton.classList.add('hidden');
+            };
+        });
+
+        cancelButton.addEventListener('click', function() {
+            if (xhr) {
+                xhr.abort();
+            }
+            stopAnimation();
+            generateButton.disabled = false;
+            generateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            cancelButton.classList.add('hidden');
+            progress.classList.add('hidden');
+            progressList.innerHTML = '<li class="text-yellow-500">CV generation cancelled.</li>';
+        });
+    </script>
+</body>
+</html>

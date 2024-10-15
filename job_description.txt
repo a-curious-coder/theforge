@@ -1,0 +1,21 @@
+Who We Are
+Cisco ThousandEyes is a Digital Experience Assurance platform that empowers organizations to deliver flawless digital experiences across every network – even the ones they don’t own. Powered by AI and an unmatched set of cloud, internet and enterprise network telemetry data, ThousandEyes enables IT teams to proactively detect, diagnose, and remediate issues – before they impact end- user experiences.
+
+ThousandEyes is deeply integrated across the entire Cisco technology portfolio and beyond, helping customers deploy at scale while also delivering AI-powered assurance insights within Cisco’s leading Networking, Security, Collaboration, and Observability portfolios.
+
+About The Role
+As a Machine Learning Engineer for the Alerts team, you'll be at the intersection of cutting-edge AI/ML technologies and real-time data processing. You'll work on developing and optimizing anomaly detection algorithms that power our highly scalable stream processing platform. This role combines the challenges of handling massive datasets with the innovation of applied machine learning to provide actionable insights to our customers.
+
+What You'll Do
+You'll collaborate with a team of skilled engineers to design, implement, and maintain large-scale AI/ML pipelines for real-time anomaly detection.  You will be responsible for training and tuning the models and performing model evaluations using Deep Learning  Machine Learning (AI/ML) Models, and Large Language Models, to detect anomalies across billions of events. You'll design and implement sophisticated anomaly detection algorithms, such as Isolation Forests, LSTM-based models, and Variational Autoencoders, tailored to our unique data streams. Creating robust evaluation frameworks and metrics to assess the performance of these algorithms will be crucial. You'll also work on implementing and optimizing stream processing solutions using technologies like Flink and Kafka. In this position, you'll have the opportunity to work with unparalleled data diversity and scale, pushing the boundaries of what's possible in real-time anomaly detection.
+
+Qualifications
+3 - 5 years of software development experience and a minimum of 2 internships with direct experience in building and evaluating ML models and delivering large-scale ML products. 
+MS or PhD in a relevant field
+Proficient in crafting machine learning models, your expertise spans neural networks including transformer models, Large Language Models, decision trees, and other traditional machine learning models, translating conceptual ideas into actual solutions.
+Fluent in some of these machine learning frameworks such as SKLearn, XGBoost, PyTorch, or Tensorflow, and can leverage code as a strategic tool to shape innovative solutions
+You will be proficient in Python and will be able to transform abstract machine learning concepts into robust, efficient, and scalable solutions
+Strong Computer Science fundamentals and object-oriented design skills
+History of building large-scale data processing systems
+Background working in a fast-paced development environment 
+Strong team collaboration and communication skills
